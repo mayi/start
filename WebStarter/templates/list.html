@@ -1,0 +1,92 @@
+$def with (results)
+<html>
+<head>
+    <title>Control</title>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <link rel="stylesheet" type="text/css" href="$static/style/screen.css">
+    <script type="text/javascript">
+        function Ajax() {
+            this.request = this.createRequest();
+        }
+
+        Ajax.prototype.createRequest = function() {
+            var request;
+            try {
+                request = new XMLHttpRequest();
+            } catch (failed) {
+                request = false;
+            }
+            if (!request) {
+                alert("Error initializing XMLHttpRequest!");
+            }
+            return request;
+        }
+
+        Ajax.prototype.get = function(url, callback) {
+            var request = this.request;
+            request.open("GET", url, true);
+            if (typeof callback == 'function') {
+                request.onreadystatechange = function() {
+                    if (request.readyState == 4) {
+                        if (request.status == 200) {
+                            callback(request.responseText);
+                        }
+                    }
+                };
+            }
+            request.send(null);
+        }
+        var ajax = new Ajax();
+        function submitEnabled(id, enabled) {
+            ajax.get("/updateEnabled?id=" + id + "&enabled=" + enabled, function() {});
+        }
+        var count = 0;
+        function re() {
+            var scr = document.getElementById('screenshot');
+            scr.src = "$static/screenshot.png?" + new Date().toString();
+            document.getElementById('screentip').innerText = count;
+            count ++;
+            window.setTimeout(re, 4000);
+        }
+    </script>
+</head>
+<body onload="re()">
+List of programs that you can start on the client.
+<table>
+<thead>
+    <tr>
+        <td>NAME</td>
+        <td>CMD</td>
+        <td>TIME</td>
+        <td>Start OR Shutdown</td>
+    </tr>
+</thead>
+<tbody>
+$if results:
+    $for row in results:
+        <tr>
+            <td>$row['name']</td>
+            <td>$row['cmd']</td>
+            <td>$row['time']</td>
+            <td>
+                <select onchange="submitEnabled($row['id'], this.value)">
+                    <option value='y'
+                        $if row['enabled'] == 'y':
+                            selected
+                >start</option>
+                    <option value='n'
+                        $if row['enabled'] == 'n':
+                            selected
+                >shutdown</option>
+                </select>
+            </td>
+        </tr>
+</tbody>
+</table>
+<div style="text-align:center">
+    <span id="screentip"></span>
+    <img id="screenshot" src="$static/screenshot.png" width="1000" style="border-color:#000"/>
+</div>
+</body>
+</html>
